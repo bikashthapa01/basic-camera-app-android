@@ -10,6 +10,7 @@ import androidx.core.content.FileProvider;
 import android.Manifest;
 import android.app.Activity;
 import android.content.ContentResolver;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
@@ -24,6 +25,13 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.Toast;
 
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
+import com.squareup.picasso.Picasso;
+
 import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -36,6 +44,7 @@ public class MainActivity extends AppCompatActivity {
     ImageView selectedImage;
     Button cameraBtn,galleryBtn;
     String currentPhotoPath;
+    StorageReference storageReference;
 
 
 
@@ -48,6 +57,8 @@ public class MainActivity extends AppCompatActivity {
         selectedImage = findViewById(R.id.displayImageView);
         cameraBtn = findViewById(R.id.cameraBtn);
         galleryBtn = findViewById(R.id.galleryBtn);
+
+        storageReference = FirebaseStorage.getInstance().getReference();
 
         cameraBtn.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -100,6 +111,11 @@ public class MainActivity extends AppCompatActivity {
                 Uri contentUri = Uri.fromFile(f);
                 mediaScanIntent.setData(contentUri);
                 this.sendBroadcast(mediaScanIntent);
+
+                uploadImageToFirebase(f.getName(),contentUri);
+
+
+
             }
 
         }
@@ -111,12 +127,41 @@ public class MainActivity extends AppCompatActivity {
                 String imageFileName = "JPEG_" + timeStamp +"."+getFileExt(contentUri);
                 Log.d("tag", "onActivityResult: Gallery Image Uri:  " +  imageFileName);
                 selectedImage.setImageURI(contentUri);
+
+                uploadImageToFirebase(imageFileName,contentUri);
+
+
             }
 
         }
 
 
     }
+
+    private void uploadImageToFirebase(String name, Uri contentUri) {
+         final StorageReference image = storageReference.child("pictures/" + name);
+         image.putFile(contentUri).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+             @Override
+             public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                 image.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
+                     @Override
+                     public void onSuccess(Uri uri) {
+                         Log.d("tag", "onSuccess: Uploaded Image URl is " + uri.toString());
+                     }
+                 });
+
+                 Toast.makeText(MainActivity.this, "Image Is Uploaded.", Toast.LENGTH_SHORT).show();
+             }
+         }).addOnFailureListener(new OnFailureListener() {
+             @Override
+             public void onFailure(@NonNull Exception e) {
+                 Toast.makeText(MainActivity.this, "Upload Failled.", Toast.LENGTH_SHORT).show();
+             }
+         });
+
+    }
+
+
 
     private String getFileExt(Uri contentUri) {
         ContentResolver c = getContentResolver();
