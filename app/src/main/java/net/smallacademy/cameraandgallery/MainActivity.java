@@ -38,7 +38,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 public class MainActivity extends AppCompatActivity {
-    public static final int CAMERA_PERM_CODE = 101;
+    public static final int All_PERMS_CODE = 1101;
     public static final int CAMERA_REQUEST_CODE = 102;
     public static final int GALLERY_REQUEST_CODE = 105;
     ImageView selectedImage;
@@ -63,7 +63,7 @@ public class MainActivity extends AppCompatActivity {
         cameraBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                askCameraPermissions();
+                askCameraAndStoragePermissions();
             }
         });
 
@@ -77,12 +77,23 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    private void askCameraPermissions() {
-        if(ContextCompat.checkSelfPermission(this,Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED){
-            ActivityCompat.requestPermissions(this,new String[] {Manifest.permission.CAMERA}, CAMERA_PERM_CODE);
-        }else {
+    private void askCameraAndStoragePermissions() {
+        
+       // Camera and Storage permission on same time
+        Log.d("TAG", "VerifyingPermission : Asking for permission ");
+        String[] permissions = {Manifest.permission.CAMERA, Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE};
+        // index 0 = camera, index 1 = readStorage , index 2 = write Storage
+
+        if (ContextCompat.checkSelfPermission(this.getApplicationContext(), permissions[0]) == PackageManager.PERMISSION_GRANTED
+                && ContextCompat.checkSelfPermission(this.getApplicationContext(), permissions[1]) == PackageManager.PERMISSION_GRANTED
+                && ContextCompat.checkSelfPermission(this.getApplicationContext(), permissions[2]) == PackageManager.PERMISSION_GRANTED) {
+
             dispatchTakePictureIntent();
+
+        } else {
+            ActivityCompat.requestPermissions(MainActivity.this, permissions, All_PERMS_CODE);
         }
+
 
     }
 
